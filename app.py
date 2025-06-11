@@ -145,16 +145,3 @@ if hasattr(st.session_state, 'tri_result'):
             <div style='margin-top: 10px; color: red;'>{right_t}</div>
         </div>
         """, unsafe_allow_html=True)
-
-# 使い方の説明
-st.markdown("---")
-st.markdown("### 📝 使い方")
-st.markdown("""
-- **四角形（足し算）**: 入力した式と図形の式を足し算します
-- **三角形（掛け算）**: 入力した式と図形の式を掛け算します
-- **対応している記法**: 
-  - `2x` → `2*x` (自動変換)
-  - `x^2` → `x**2` (自動変換)  
-  - `3(x+1)` → `3*(x+1)` (自動変換)
-- 例: `x+1`, `2x^2+3x`, `(x+2)(x-1)` など
-""")
