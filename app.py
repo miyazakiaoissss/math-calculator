@@ -59,31 +59,33 @@ if hasattr(st.session_state, 'rect_result'):
     
     st.markdown("### 計算結果（四角形）")
     
-    # 視覚的な表示
-    col_left, col_center, col_right = st.columns([1, 1, 1])
-    
-    with col_left:
-        if left_r:
-            st.markdown(f"<div style='text-align: center; font-size: 18px;'>{left_r}</div>", unsafe_allow_html=True)
-    
-    with col_center:
+    # 視覚的な表示（横一列に配置）
+    if left_r and right_r and center_r != "エラー":
         st.markdown(f"""
-        <div style='text-align: center;'>
+        <div style='text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0;'>
+            <div style='font-size: 18px; font-weight: bold;'>{left_r}</div>
+            <div style='font-size: 20px; color: #333;'>→</div>
             <div style='display: inline-block; width: 80px; height: 60px; background-color: lightblue; 
                         border: 2px solid black; display: flex; align-items: center; justify-content: center;
                         font-size: 16px; font-weight: bold;'>
                 {center_r}
             </div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='font-size: 18px; font-weight: bold;'>{right_r}</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col_right:
-        if right_r:
-            st.markdown(f"<div style='text-align: center; font-size: 18px;'>{right_r}</div>", unsafe_allow_html=True)
-    
-    # 矢印表示
-    if left_r and right_r and center_r != "エラー":
-        st.markdown("<div style='text-align: center; font-size: 20px;'>→ + → =</div>", unsafe_allow_html=True)
+    else:
+        # エラーの場合の表示
+        st.markdown(f"""
+        <div style='text-align: center; margin: 20px 0;'>
+            <div style='display: inline-block; width: 80px; height: 60px; background-color: lightblue; 
+                        border: 2px solid black; display: flex; align-items: center; justify-content: center;
+                        font-size: 16px; font-weight: bold;'>
+                {center_r}
+            </div>
+            <div style='margin-top: 10px; color: red;'>{right_r}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -106,33 +108,43 @@ if hasattr(st.session_state, 'tri_result'):
     
     st.markdown("### 計算結果（三角形）")
     
-    # 視覚的な表示
-    col_left2, col_center2, col_right2 = st.columns([1, 1, 1])
-    
-    with col_left2:
-        if left_t:
-            st.markdown(f"<div style='text-align: center; font-size: 18px;'>{left_t}</div>", unsafe_allow_html=True)
-    
-    with col_center2:
+    # 視覚的な表示（横一列に配置）
+    if left_t and right_t and center_t != "エラー":
         st.markdown(f"""
-        <div style='text-align: center;'>
-            <div style='display: inline-block; width: 0; height: 0; 
-                        border-left: 40px solid transparent; border-right: 40px solid transparent;
-                        border-bottom: 60px solid lightgreen; position: relative;'>
+        <div style='text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0;'>
+            <div style='font-size: 18px; font-weight: bold;'>{left_t}</div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='position: relative; display: inline-block;'>
+                <div style='width: 0; height: 0; 
+                            border-left: 40px solid transparent; border-right: 40px solid transparent;
+                            border-bottom: 60px solid lightgreen; margin: 0 auto;'>
+                </div>
+                <div style='position: absolute; top: 35px; left: 50%; transform: translateX(-50%); 
+                            font-size: 16px; font-weight: bold; color: black;'>
+                    {center_t}
+                </div>
             </div>
-            <div style='position: relative; top: -35px; font-size: 16px; font-weight: bold; color: black;'>
-                {center_t}
-            </div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='font-size: 18px; font-weight: bold;'>{right_t}</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    with col_right2:
-        if right_t:
-            st.markdown(f"<div style='text-align: center; font-size: 18px;'>{right_t}</div>", unsafe_allow_html=True)
-    
-    # 矢印表示
-    if left_t and right_t and center_t != "エラー":
-        st.markdown("<div style='text-align: center; font-size: 20px;'>→ × → =</div>", unsafe_allow_html=True)
+    else:
+        # エラーの場合の表示
+        st.markdown(f"""
+        <div style='text-align: center; margin: 20px 0;'>
+            <div style='position: relative; display: inline-block;'>
+                <div style='width: 0; height: 0; 
+                            border-left: 40px solid transparent; border-right: 40px solid transparent;
+                            border-bottom: 60px solid lightgreen; margin: 0 auto;'>
+                </div>
+                <div style='position: absolute; top: 35px; left: 50%; transform: translateX(-50%); 
+                            font-size: 16px; font-weight: bold; color: black;'>
+                    {center_t}
+                </div>
+            </div>
+            <div style='margin-top: 10px; color: red;'>{right_t}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # 使い方の説明
 st.markdown("---")
