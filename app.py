@@ -1,127 +1,119 @@
 import streamlit as st
-import sympy as sp
-import re
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+from matplotlib.patches import Rectangle, Polygon
+from sympy import sympify
+import re
 
-# 固定値
-a, b = 3, 2
+# 定数設定
+FIG_WIDTH = 8
+FIG_HEIGHT = 2
+SHAPE_HEIGHT = 1.2
+SHAPE_WIDTH = 1
+TRIANGLE_HEIGHT = SHAPE_HEIGHT
 
-# 図のサイズ設定
-FIG_W, FIG_H = 8, 2
+# 定数
+fixed_values = {"a": 3, "b": 2}
 
-# 前処理関数（\nや^を整形）
+# 式の前処理
 def preprocess_expression(expr):
     expr = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expr)
     expr = re.sub(r'(\d)\(', r'\1*(', expr)
     return expr.replace("^", "**")
 
-# 計算関数
-def calculate(expr_str, mode):
+# 計算処理
+def calculate_result(value, mode):
     try:
-        expr = sp.sympify(preprocess_expression(expr_str))
-        if not expr.is_number:
-            return None
+        expr = sympify(preprocess_expression(str(value)))
+        a, b = fixed_values["a"], fixed_values["b"]
 
         if mode == "add_then_mul":
-            result = sp.expand((expr + b) * (2 * a))
+            result = (expr + b) * (2 * a)
         else:
-            result = sp.expand(expr * a + (-3 * b))
+            result = expr * a + (-3 * b)
 
-        if result.is_number:
-            result_val = int(result.evalf()) if result.evalf().is_integer else float(result.evalf())
-            return result_val
-        return None
+        result = result.evalf()
+        result = int(result) if result == int(result) else result
+        return int(expr), result
     except Exception:
-        return None
+        return None, None
 
-# 図の描画関数
-def draw_diagram(input_value, result, mode):
-    fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
-    ax.set_xlim(0, 800)
-    ax.set_ylim(0, 200)
+# 描画処理
+def draw_diagram(input_val, result_val, mode):
+    fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT))
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 2)
     ax.axis('off')
 
-    y = 100
-    x_input = 40
-    x1 = 200
-    x2 = 400
-    x_out = 600
-    arrow_offset = 60
-    shape_w = 60
-    shape_h = 80
+    y_center = 1
+    x_positions = [0.5, 2, 4, 6, 7.5, 9]
+    x_in, x1, x2, x3, x4, x_out = x_positions
 
-    # 入力値
-    ax.text(x_input, y, str(int(input_value)), ha='center', va='center', fontsize=16)
-    ax.annotate("", xy=(x1 - arrow_offset, y), xytext=(x_input + 20, y), arrowprops=dict(arrowstyle="->", lw=2))
+    # 入力
+    ax.text(x_in, y_center, str(input_val), ha='center', va='center', fontsize=14)
+    ax.annotate("", xy=(x1 - 0.1, y_center), xytext=(x_in + 0.2, y_center),
+                arrowprops=dict(arrowstyle="->", lw=2))
 
     if mode == "add_then_mul":
         # 四角形
-        rect = patches.Rectangle((x1 - shape_w/2, y - shape_h/2), shape_w, shape_h,
-                                 linewidth=2, edgecolor='black', facecolor='lightblue')
+        rect = Rectangle((x1 - SHAPE_WIDTH / 2, y_center - SHAPE_HEIGHT / 2),
+                         SHAPE_WIDTH, SHAPE_HEIGHT, facecolor='lightblue', edgecolor='black', lw=2)
         ax.add_patch(rect)
-        ax.text(x1, y, "b", ha='center', va='center', fontsize=16)
+        ax.text(x1, y_center, "b", ha='center', va='center', fontsize=14)
 
-        # 矢印
-        ax.annotate("", xy=(x2 - arrow_offset, y), xytext=(x1 + shape_w/2 + 10, y), arrowprops=dict(arrowstyle="->", lw=2))
+        ax.annotate("", xy=(x2 - 0.1, y_center), xytext=(x1 + SHAPE_WIDTH / 2 + 0.1, y_center),
+                    arrowprops=dict(arrowstyle="->", lw=2))
 
-        # 三角形（正三角形 + 枠付き）
-        tri_height = shape_h
-        tri_half_base = shape_h / (3 ** 0.5)
-        triangle = patches.Polygon(
-            [[x2, y - tri_height / 2],
-             [x2 - tri_half_base, y + tri_height / 2],
-             [x2 + tri_half_base, y + tri_height / 2]],
-            closed=True, edgecolor='black', facecolor='lightgreen', linewidth=2
-        )
+        # 三角形
+        triangle = Polygon([[x2, y_center + TRIANGLE_HEIGHT / 2],
+                            [x2 - SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2],
+                            [x2 + SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2]],
+                           closed=True, facecolor='lightgreen', edgecolor='black', lw=2)
         ax.add_patch(triangle)
-        ax.text(x2, y + 5, "2a", ha='center', va='center', fontsize=16)
+        ax.text(x2, y_center, "2a", ha='center', va='center', fontsize=14)
 
-        # 最終矢印
-        ax.annotate("", xy=(x_out - arrow_offset, y), xytext=(x2 + tri_half_base + 10, y), arrowprops=dict(arrowstyle="->", lw=2))
+        ax.annotate("", xy=(x3 - 0.1, y_center), xytext=(x2 + SHAPE_WIDTH / 2 + 0.1, y_center),
+                    arrowprops=dict(arrowstyle="->", lw=2))
 
     else:
-        # 三角形（左）
-        tri_height = shape_h
-        tri_half_base = shape_h / (3 ** 0.5)
-        triangle = patches.Polygon(
-            [[x1, y - tri_height / 2],
-             [x1 - tri_half_base, y + tri_height / 2],
-             [x1 + tri_half_base, y + tri_height / 2]],
-            closed=True, edgecolor='black', facecolor='lightgreen', linewidth=2
-        )
+        # 三角形
+        triangle = Polygon([[x1, y_center + TRIANGLE_HEIGHT / 2],
+                            [x1 - SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2],
+                            [x1 + SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2]],
+                           closed=True, facecolor='lightgreen', edgecolor='black', lw=2)
         ax.add_patch(triangle)
-        ax.text(x1, y + 5, "a", ha='center', va='center', fontsize=16)
+        ax.text(x1, y_center, "a", ha='center', va='center', fontsize=14)
 
-        # 矢印
-        ax.annotate("", xy=(x2 - arrow_offset, y), xytext=(x1 + tri_half_base + 10, y), arrowprops=dict(arrowstyle="->", lw=2))
+        ax.annotate("", xy=(x2 - 0.1, y_center), xytext=(x1 + SHAPE_WIDTH / 2 + 0.1, y_center),
+                    arrowprops=dict(arrowstyle="->", lw=2))
 
-        # 四角形（右）
-        rect = patches.Rectangle((x2 - shape_w/2, y - shape_h/2), shape_w, shape_h,
-                                 linewidth=2, edgecolor='black', facecolor='lightblue')
+        # 四角形
+        rect = Rectangle((x2 - SHAPE_WIDTH / 2, y_center - SHAPE_HEIGHT / 2),
+                         SHAPE_WIDTH, SHAPE_HEIGHT, facecolor='lightblue', edgecolor='black', lw=2)
         ax.add_patch(rect)
-        ax.text(x2, y, "-3b", ha='center', va='center', fontsize=16)
+        ax.text(x2, y_center, "-3b", ha='center', va='center', fontsize=14)
 
-        # 最終矢印
-        ax.annotate("", xy=(x_out - arrow_offset, y), xytext=(x2 + shape_w/2 + 10, y), arrowprops=dict(arrowstyle="->", lw=2))
+        ax.annotate("", xy=(x3 - 0.1, y_center), xytext=(x2 + SHAPE_WIDTH / 2 + 0.1, y_center),
+                    arrowprops=dict(arrowstyle="->", lw=2))
 
-    # 出力値
-    if result is not None:
-        ax.text(x_out, y, str(int(result)), ha='center', va='center', fontsize=16)
+    # 出力
+    ax.annotate("", xy=(x_out - 0.1, y_center), xytext=(x3 + 0.2, y_center),
+                arrowprops=dict(arrowstyle="->", lw=2))
+    ax.text(x_out, y_center, str(result_val), ha='center', va='center', fontsize=14)
 
     st.pyplot(fig)
 
-# --- Streamlit UI ---
-st.set_page_config(layout="centered")
-st.title("図形と式の計算")
+# Streamlit UI
+st.set_page_config(layout="wide")
+st.title("図形を通る計算アプリ")
 
-col1, col2 = st.columns([2, 1])
+col1, col2 = st.columns([1, 3])
 with col1:
-    expr_input = st.number_input("入れる数（整数）", step=1, format="%d")
+    mode = st.radio("計算の順番", ["add_then_mul", "mul_then_add"], format_func=lambda x: "四角形→三角形" if x=="add_then_mul" else "三角形→四角形")
+    input_val = st.number_input("入れる数", step=1, format="%d")
+
 with col2:
-    mode = st.radio("図形の順番", ["四角→三角", "三角→四角"], horizontal=True)
-
-mode_key = "add_then_mul" if mode == "四角→三角" else "mul_then_add"
-
-result = calculate(expr_input, mode_key)
-draw_diagram(expr_input, result, mode_key)
+    input_expr, result = calculate_result(input_val, mode)
+    if input_expr is not None:
+        draw_diagram(input_expr, result, mode)
+    else:
+        st.error("式の計算中にエラーが発生しました。")
