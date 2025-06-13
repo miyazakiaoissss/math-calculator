@@ -1,119 +1,148 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
-from sympy import sympify
+from sympy import sympify, simplify
 import re
 
-# 定数設定
-FIG_WIDTH = 8
-FIG_HEIGHT = 2
-SHAPE_HEIGHT = 1.2
-SHAPE_WIDTH = 1
-TRIANGLE_HEIGHT = SHAPE_HEIGHT
+# ページ設定
+st.set_page_config(page_title="図形と式の計算", page_icon="📐", layout="centered")
 
-# 定数
-fixed_values = {"a": 3, "b": 2}
-
-# 式の前処理
+# ----------- 入力式を補正する関数 -----------
 def preprocess_expression(expr):
-    expr = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expr)
-    expr = re.sub(r'(\d)\(', r'\1*(', expr)
-    return expr.replace("^", "**")
+    expr = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expr)   # 2x -> 2*x
+    expr = re.sub(r'(\d)\(', r'\1*(', expr)           # 3(x+1) -> 3*(x+1)
+    expr = expr.replace("^", "**")                     # x^2 -> x**2
+    return expr
 
-# 計算処理
-def calculate_result(value, mode):
+# ----------- 表示用：* を省略 -----------
+def display_expression(expr):
+    return str(expr).replace("*", "")
+
+# ----------- 計算を実行する関数 -----------
+def calculate_operation(written_str, input_str, operation):
     try:
-        expr = sympify(preprocess_expression(str(value)))
-        a, b = fixed_values["a"], fixed_values["b"]
+        if not written_str or not input_str:
+            return "エラー", "", "空の入力があります"
+        
+        written = sympify(preprocess_expression(written_str))
+        input_value = sympify(preprocess_expression(input_str))
+        
+        if operation == "add":
+            result = simplify(written + input_value)
+        else:  # multiply
+            result = simplify(written * input_value)
+        
+        return (display_expression(written), 
+                display_expression(input_value), 
+                display_expression(result))
+    except Exception as e:
+        return "エラー", "", str(e)
 
-        if mode == "add_then_mul":
-            result = (expr + b) * (2 * a)
-        else:
-            result = expr * a + (-3 * b)
+# タイトル
+st.title("📐 図形と式の計算")
+st.markdown("---")
 
-        result = result.evalf()
-        result = int(result) if result == int(result) else result
-        return int(expr), result
-    except Exception:
-        return None, None
+# ----------- 四角形（加算）セクション -----------
+st.subheader("■ 四角形（足し算）")
 
-# 描画処理
-def draw_diagram(input_val, result_val, mode):
-    fig, ax = plt.subplots(figsize=(FIG_WIDTH, FIG_HEIGHT))
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 2)
-    ax.axis('off')
-
-    y_center = 1
-    x_positions = [0.5, 2, 4, 6, 7.5, 9]
-    x_in, x1, x2, x3, x4, x_out = x_positions
-
-    # 入力
-    ax.text(x_in, y_center, str(input_val), ha='center', va='center', fontsize=14)
-    ax.annotate("", xy=(x1 - 0.1, y_center), xytext=(x_in + 0.2, y_center),
-                arrowprops=dict(arrowstyle="->", lw=2))
-
-    if mode == "add_then_mul":
-        # 四角形
-        rect = Rectangle((x1 - SHAPE_WIDTH / 2, y_center - SHAPE_HEIGHT / 2),
-                         SHAPE_WIDTH, SHAPE_HEIGHT, facecolor='lightblue', edgecolor='black', lw=2)
-        ax.add_patch(rect)
-        ax.text(x1, y_center, "b", ha='center', va='center', fontsize=14)
-
-        ax.annotate("", xy=(x2 - 0.1, y_center), xytext=(x1 + SHAPE_WIDTH / 2 + 0.1, y_center),
-                    arrowprops=dict(arrowstyle="->", lw=2))
-
-        # 三角形
-        triangle = Polygon([[x2, y_center + TRIANGLE_HEIGHT / 2],
-                            [x2 - SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2],
-                            [x2 + SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2]],
-                           closed=True, facecolor='lightgreen', edgecolor='black', lw=2)
-        ax.add_patch(triangle)
-        ax.text(x2, y_center, "2a", ha='center', va='center', fontsize=14)
-
-        ax.annotate("", xy=(x3 - 0.1, y_center), xytext=(x2 + SHAPE_WIDTH / 2 + 0.1, y_center),
-                    arrowprops=dict(arrowstyle="->", lw=2))
-
-    else:
-        # 三角形
-        triangle = Polygon([[x1, y_center + TRIANGLE_HEIGHT / 2],
-                            [x1 - SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2],
-                            [x1 + SHAPE_WIDTH / 2, y_center - TRIANGLE_HEIGHT / 2]],
-                           closed=True, facecolor='lightgreen', edgecolor='black', lw=2)
-        ax.add_patch(triangle)
-        ax.text(x1, y_center, "a", ha='center', va='center', fontsize=14)
-
-        ax.annotate("", xy=(x2 - 0.1, y_center), xytext=(x1 + SHAPE_WIDTH / 2 + 0.1, y_center),
-                    arrowprops=dict(arrowstyle="->", lw=2))
-
-        # 四角形
-        rect = Rectangle((x2 - SHAPE_WIDTH / 2, y_center - SHAPE_HEIGHT / 2),
-                         SHAPE_WIDTH, SHAPE_HEIGHT, facecolor='lightblue', edgecolor='black', lw=2)
-        ax.add_patch(rect)
-        ax.text(x2, y_center, "-3b", ha='center', va='center', fontsize=14)
-
-        ax.annotate("", xy=(x3 - 0.1, y_center), xytext=(x2 + SHAPE_WIDTH / 2 + 0.1, y_center),
-                    arrowprops=dict(arrowstyle="->", lw=2))
-
-    # 出力
-    ax.annotate("", xy=(x_out - 0.1, y_center), xytext=(x3 + 0.2, y_center),
-                arrowprops=dict(arrowstyle="->", lw=2))
-    ax.text(x_out, y_center, str(result_val), ha='center', va='center', fontsize=14)
-
-    st.pyplot(fig)
-
-# Streamlit UI
-st.set_page_config(layout="wide")
-st.title("図形を通る計算アプリ")
-
-col1, col2 = st.columns([1, 3])
+col1, col2 = st.columns(2)
 with col1:
-    mode = st.radio("計算の順番", ["add_then_mul", "mul_then_add"], format_func=lambda x: "四角形→三角形" if x=="add_then_mul" else "三角形→四角形")
-    input_val = st.number_input("入れる数", step=1, format="%d")
-
+    input_r = st.text_input("入力する数や式（例：2x+1）：", key="input_rect", placeholder="2x+1")
 with col2:
-    input_expr, result = calculate_result(input_val, mode)
-    if input_expr is not None:
-        draw_diagram(input_expr, result, mode)
+    written_r = st.text_input("図形に書かれた数や式（例：3）：", key="written_rect", placeholder="3")
+
+if st.button("🔄 図形に反映（四角）", key="calc_rect"):
+    center_r, left_r, right_r = calculate_operation(written_r, input_r, "add")
+    st.session_state.rect_result = (center_r, left_r, right_r)
+
+# 四角形の結果表示
+if hasattr(st.session_state, 'rect_result'):
+    center_r, left_r, right_r = st.session_state.rect_result
+    
+    st.markdown("### 計算結果（四角形）")
+    
+    # 視覚的な表示（横一列に配置）
+    if left_r and right_r and center_r != "エラー":
+        st.markdown(f"""
+        <div style='text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0;'>
+            <div style='font-size: 18px; font-weight: bold;'>{left_r}</div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='display: inline-block; width: 80px; height: 60px; background-color: lightblue; 
+                        border: 2px solid black; display: flex; align-items: center; justify-content: center;
+                        font-size: 16px; font-weight: bold;'>
+                {center_r}
+            </div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='font-size: 18px; font-weight: bold;'>{right_r}</div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.error("式の計算中にエラーが発生しました。")
+        # エラーの場合の表示
+        st.markdown(f"""
+        <div style='text-align: center; margin: 20px 0;'>
+            <div style='display: inline-block; width: 80px; height: 60px; background-color: lightblue; 
+                        border: 2px solid black; display: flex; align-items: center; justify-content: center;
+                        font-size: 16px; font-weight: bold;'>
+                {center_r}
+            </div>
+            <div style='margin-top: 10px; color: red;'>{right_r}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# ----------- 三角形（掛け算）セクション -----------
+st.subheader("▲ 三角形（掛け算）")
+
+col3, col4 = st.columns(2)
+with col3:
+    input_t = st.text_input("入力する数や式（例：2x+1）：", key="input_tri", placeholder="2x+1")
+with col4:
+    written_t = st.text_input("図形に書かれた数や式（例：3）：", key="written_tri", placeholder="3")
+
+if st.button("🔄 図形に反映（三角）", key="calc_tri"):
+    center_t, left_t, right_t = calculate_operation(written_t, input_t, "multiply")
+    st.session_state.tri_result = (center_t, left_t, right_t)
+
+# 三角形の結果表示
+if hasattr(st.session_state, 'tri_result'):
+    center_t, left_t, right_t = st.session_state.tri_result
+    
+    st.markdown("### 計算結果（三角形）")
+    
+    # 視覚的な表示（横一列に配置）
+    if left_t and right_t and center_t != "エラー":
+        st.markdown(f"""
+        <div style='text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0;'>
+            <div style='font-size: 18px; font-weight: bold;'>{left_t}</div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='position: relative; display: inline-block;'>
+                <div style='width: 0; height: 0; 
+                            border-left: 40px solid transparent; border-right: 40px solid transparent;
+                            border-bottom: 60px solid lightgreen; margin: 0 auto;'>
+                </div>
+                <div style='position: absolute; top: 35px; left: 50%; transform: translateX(-50%); 
+                            font-size: 16px; font-weight: bold; color: black;'>
+                    {center_t}
+                </div>
+            </div>
+            <div style='font-size: 20px; color: #333;'>→</div>
+            <div style='font-size: 18px; font-weight: bold;'>{right_t}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # エラーの場合の表示
+        st.markdown(f"""
+        <div style='text-align: center; margin: 20px 0;'>
+            <div style='position: relative; display: inline-block;'>
+                <div style='width: 0; height: 0; 
+                            border-left: 40px solid transparent; border-right: 40px solid transparent;
+                            border-bottom: 60px solid lightgreen; margin: 0 auto;'>
+                </div>
+                <div style='position: absolute; top: 35px; left: 50%; transform: translateX(-50%); 
+                            font-size: 16px; font-weight: bold; color: black;'>
+                    {center_t}
+                </div>
+            </div>
+            <div style='margin-top: 10px; color: red;'>{right_t}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
